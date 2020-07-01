@@ -1,6 +1,7 @@
 package com.anla.rocketmqlearn.sample.broadcast;
 
 import com.anla.rocketmqlearn.sample.config.SampleConstant;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -24,14 +25,19 @@ public class BroadcastConsumer {
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 
         //set to broadcast mode
-        consumer.setMessageModel(MessageModel.BROADCASTING);
-
+        // consumer.setMessageModel(MessageModel.BROADCASTING);
+        consumer.setMessageModel(MessageModel.CLUSTERING);
+        final AtomicInteger i = new AtomicInteger();
         consumer.subscribe("BroadcastProducerTopicTest", "TagA || TagC || TagD");
         consumer.setNamesrvAddr(SampleConstant.NAMESPACE_ADDR);
         consumer.registerMessageListener(new MessageListenerConcurrently() {
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                                                             ConsumeConcurrentlyContext context) {
                 System.out.printf(Thread.currentThread().getName() + " Receive New Messages: " + msgs + "%n");
+                if (i.get() == 4){
+                    throw new RuntimeException("just throw");
+                }
+                i.incrementAndGet();
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });
