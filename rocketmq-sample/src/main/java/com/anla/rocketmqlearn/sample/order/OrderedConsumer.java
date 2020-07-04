@@ -19,30 +19,18 @@ import java.util.concurrent.atomic.AtomicLong;
  **/
 public class OrderedConsumer {
     public static void main(String[] args) throws Exception {
-        final DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("OrderedProducer_group_name");
+        final DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("OrderedConsumer_group_name");
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-        consumer.subscribe("OrderedProducerTopicTest", "TagA || TagC || TagD");
+        consumer.subscribe("OrderedProducerTopicTest", "TagA");
         consumer.setNamesrvAddr(SampleConstant.NAMESPACE_ADDR);
         consumer.registerMessageListener(new MessageListenerOrderly() {
 
-            AtomicLong consumeTimes = new AtomicLong(0);
             public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs,
                                                        ConsumeOrderlyContext context) {
-                context.setAutoCommit(false);
+                context.setAutoCommit(false);  // 永远不进入dlq
+                // 如果失败，每隔1s重试一次
                 System.out.printf(Thread.currentThread().getName() + " Receive New Messages: " + msgs + "%n");
-                this.consumeTimes.incrementAndGet();
-                if ((this.consumeTimes.get() % 2) == 0) {
-                    return ConsumeOrderlyStatus.SUCCESS;
-                } else if ((this.consumeTimes.get() % 3) == 0) {
-                    return ConsumeOrderlyStatus.ROLLBACK;
-                } else if ((this.consumeTimes.get() % 4) == 0) {
-                    return ConsumeOrderlyStatus.COMMIT;
-                } else if ((this.consumeTimes.get() % 5) == 0) {
-                    context.setSuspendCurrentQueueTimeMillis(3000);
-                    return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
-                }
-                System.out.println("consumeTimes:"+ this.consumeTimes);
-                return ConsumeOrderlyStatus.SUCCESS;
+                return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
             }
         });
         consumer.start();

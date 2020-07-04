@@ -34,11 +34,10 @@ public class OrderedProducer {
         producer.setNamesrvAddr(NAMESPACE_ADDR);
         //Launch the instance.
         producer.start();
-        String[] tags = new String[] {"TagA", "TagB", "TagC", "TagD", "TagE"};
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 5; i++) {
             int orderId = i % 10;
             //Create a message instance, specifying topic, tag and message body.
-            Message msg = new Message("OrderedProducerTopicTest", tags[i % tags.length], "KEY" + i,
+            Message msg = new Message("OrderedProducerTopicTest", "TagA", "KEY" + i,
                     ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
             SendResult sendResult = producer.send(msg, new MessageQueueSelector() {
                 public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
