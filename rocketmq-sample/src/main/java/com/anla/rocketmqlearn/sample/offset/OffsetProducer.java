@@ -17,11 +17,12 @@ public class OffsetProducer {
         producer.setNamesrvAddr(SampleConstant.NAMESPACE_ADDR);
         producer.start();
 
-        for (int i = 0; i < 300; i++){
+        for (int i = 0; i < 600; i++){
             Message msg = new Message("offset_topic",
-                    "TagA",
+                    "Tag"+i%4,
                     "OrderID188",
                     "Hello world".getBytes(RemotingHelper.DEFAULT_CHARSET));
+            msg.putUserProperty("a", i%4+"");
             SendResult sendResult = producer.send(msg);
             System.out.printf("%s%n", sendResult);
         }
